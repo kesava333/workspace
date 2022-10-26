@@ -25,17 +25,24 @@ for AWSRegion in RegionList:
 
     for vm in instances:
         if vm.tags is None or 'Name' not in [t['Key'] for t in vm.tags]:
-        print (vm.instance_id)
-        ec2.create_tags(Resources=[str(vm.instance_id)], Tags=vm_tags)
+          logging.info("Adding tags to Instance - "+ vm.instance_id)
+          ec2.create_tags(Resources=[str(vm.instance_id)], Tags=vm_tags)
 
     volumes = [i for i in resource.volumes.all()]
     for vol in volumes:
         if vol.tags is None or 'Name' not in [t['Key'] for t in vol.tags]:
-        ec2.create_tags(Resources=[str(vol.volume_id)], Tags=vm_tags)
+          logging.info("Adding tags to Volume - "+ vol.volume_id)
+          ec2.create_tags(Resources=[str(vol.volume_id)], Tags=vm_tags)
 
     for snaps in ec2.describe_snapshots(OwnerIds=['self'])['Snapshots']:
         if 'Tags' in snaps:
-        tagsList = [tag['Key'] for tag in snaps['Tags']]
+          tagsList = [tag['Key'] for tag in snaps['Tags']]
+          if 'Name' not in tagsList:
+            logging.info("Adding tags to Snapshots - "+ snaps['SnapshotId'])
+            ec2.create_tags(Resources=[str(snaps['SnapshotId'])], Tags=vm_tags)
         else:
-        ec2.create_tags(Resources=[str(snaps['SnapshotId'])], Tags=vm_tags)
+          logging.info("Adding tags to Snapshots - "+ snaps['SnapshotId'])
+          ec2.create_tags(Resources=[str(snaps['SnapshotId'])], Tags=vm_tags)
+        
+      
         
