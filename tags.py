@@ -43,6 +43,3 @@ for AWSRegion in RegionList:
         else:
           logging.info("Adding tags to Snapshots - "+ snaps['SnapshotId'])
           ec2.create_tags(Resources=[str(snaps['SnapshotId'])], Tags=vm_tags)
-        
-      
-        
