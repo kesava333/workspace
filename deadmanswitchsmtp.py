@@ -18,6 +18,7 @@ import logging
 import subprocess
 import sys
 from botocore.exceptions import ClientError
+import smtplib
 
 def lambda_handler(event, context):
         subprocess.call('pip install tabulate -t /tmp/ --no-cache-dir'.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
