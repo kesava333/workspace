@@ -217,7 +217,6 @@ def lambda_handler(event, context):
         
         for email in emails:
             emailTriggerInstanceList.append(instanceSegregation(emailList,email))
-        print(emailTriggerInstanceList)
         
         if not StoppedInstances:
             logging.info('No Unprotected Instances Found, nothing to terminate')
