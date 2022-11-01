@@ -190,6 +190,7 @@ def sendEmail(email,body):
         please reach out to <b> devops </b> if there any concerns <br>
         """+'\n'.join(map(str,body))+"""
         </p> <br>"""
+    print(template)
     message.Html = template
     sender = Mailer(host)
     sender.send(message)
