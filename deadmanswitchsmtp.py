@@ -184,13 +184,13 @@ def sendEmail(email,body):
     host = "smtp.clearpath.ai"
     message = Message(From="devops@clearpath.ai", To=email)
     message.Subject = "AWS SImulation Notification"
-    message.Html = """<p>Hi!<br>
+    template = """<p>Hi!<br>
        <h2> This Email is regarding the AWS Simulation termination policy</h2> <br>
         The following instances will be terminated as per the policy in 7 Days, 
         please reach out to <b> devops </b> if there any concerns <br>
         """+'\n'.join(map(str,body))+"""
         </p> <br>"""
-
+    message.Html = template
     sender = Mailer(host)
     sender.send(message)
 
