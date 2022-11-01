@@ -7,7 +7,6 @@
 '''Default - If the instance tag value set to be default, the lambda function will keep monitoring these instances for 30 days 
  & terminate them after 30 days only if the instance is not powered on for 30 days '''
 
-import json 
 import time
 import boto3
 from datetime import date
@@ -18,7 +17,8 @@ import logging
 import subprocess
 import sys
 from botocore.exceptions import ClientError
-import smtplib
+from mailer import Mailer
+from mailer import Message
 
 subprocess.call('pip install tabulate -t /tmp/ --no-cache-dir'.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 sys.path.insert(1, '/tmp/')
@@ -182,10 +182,17 @@ def instanceSegregation(instanceList,email):
 
 def sendEmail(email,body):
     host = "smtp.clearpath.ai"
-    server = smtplib.SMTP(host)
-    server.sendmail("devops@clearpath.ai", email, body)
-    server.quit()
+    message = Message(From="devops@clearpath.ai", To=email)
+    message.Subject = "AWS SImulation Notification"
+    message.Html = """<p>Hi!<br>
+       <h2> This Email is regarding the AWS Simulation termination policy</h2> <br>
+        The following instances will be terminated as per the policy in 7 Days, 
+        please reach out to <b> devops </b> if there any concerns <br>
+        """+'\n'.join(map(str,body))+"""
+        </p> <br>"""
 
+    sender = Mailer(host)
+    sender.send(message)
 
 def sendEmailtemplate(senderItems):
     senderItems = [i for n, i in enumerate(senderItems)
@@ -194,15 +201,10 @@ def sendEmailtemplate(senderItems):
     for email in senderItems:
         instanceDetails=[]
         instanceIds=[*set(list(email.values())[0])]
-
-        template="""
-        This Email is regarding the instance termination policy
-        The following instances will be terminated as per the policy in 5 Days"""
-
         for instance in instanceIds:
             name=[tags['Value'] for ids in ec2resource.instances.all() for tags in ids.tags if tags['Key'] == 'Name' and ids.instance_id == instance]
             instanceDetails.append(instance + " ==> "+ name[0])
-        sendEmail(list(email.keys())[0],template+'\n'+'\n'.join(map(str,instanceDetails)))
+        sendEmail(list(email.keys())[0], instanceDetails)
 
 filterProtectedInstances()
 terminateUnusedInstance()
