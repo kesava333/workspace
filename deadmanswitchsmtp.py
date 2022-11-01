@@ -190,16 +190,20 @@ def sendEmail(email,body):
 def sendEmailtemplate(emailId,instanceList):
     senderItems = [i for n, i in enumerate(senderItems)
     if i not in senderItems[n + 1:]]
-
+  
     for email in senderItems:
-        instanceIds=[*set(list(email.values())[0])]
-        #'\n'.join(map(str,list(instanceIds.values())[0]))
-        
-        template="""
-        This Email is regarding the instance termination policy
-        The following instances will be terminated as per the policy in 5 Days"""
-    
-        sendEmail(list(email.keys())[0],template+'\n'+'\n'.join(map(str,instanceIds)))
+       instanceDetails=[]
+       instanceIds=[*set(list(email.values())[0])]
+
+       template="""
+       This Email is regarding the instance termination policy
+       The following instances will be terminated as per the policy in 5 Days"""
+
+       for instance in instanceIds:
+         name=[tags['Value'] for ids in ec2resource.instances.all() for tags in ids.tags if tags['Key'] == 'Name' and ids.instance_id == instance]
+         instanceDetails.append(instance + " ==> "+ name[0])
+         #sendEmail(list(email.keys())[0],template+'\n'+'\n'.join(map(str,instanceIds)))
+         sendEmail(list(email.keys())[0],template+'\n'+'\n'.join(map(str,instanceDetails)))
 
 filterProtectedInstances()
 terminateUnusedInstance()
