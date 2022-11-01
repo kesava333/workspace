@@ -128,14 +128,14 @@ def terminateUnusedInstance():
                                 logging.info(instance.id + " will be powered off, Because the instance is not expired")
                     except Exception as e:
                         if tags["Key"] == 'TerminateDate' and  tags["Value"] == 'Default':
-                            print(ec2instance.tags)
+                            # print(ec2instance.tags)
                             launchTime = ec2instance.launch_time
                             stoppedDate=date(today.year,today.month,today.day)-date(launchTime.year,launchTime.month,launchTime.day)
                             if ec2instance.state['Name'] == 'stopped' and stoppedDate.days >= 30 :
                                 logging.info("The Instance "+ instance.id + " stopped for 30+days")
                                 TerminateInstances.append(instance.id)
-                            elif ec2instance.state['Name'] == 'stopped' and stoppedDate.days <= 24 :
-                                logging.info("The Instance "+ instance.id + " stopped for 24 Days")
+                            elif ec2instance.state['Name'] == 'stopped' and stoppedDate.days <= 0 :
+                                logging.info("The Instance "+ instance.id + " stopped for 24 Days, sending out email...")
                                 emailList.append(instance.id)
                             elif ec2instance.state['Name'] == 'running':
                                 StoppedInstances.append(instance.id)
@@ -148,8 +148,8 @@ def terminateUnusedInstance():
                         if ec2instance.state['Name'] == 'stopped' and stoppedDate.days >= 30 :
                             logging.info("The Instance "+ instance.id + " stopped for 30+days")
                             TerminateInstances.append(instance.id)
-                        elif ec2instance.state['Name'] == 'stopped' and stoppedDate.days <= 24 :
-                            logging.info("The Instance "+ instance.id + " stopped for 24 Days")
+                        elif ec2instance.state['Name'] == 'stopped' and stoppedDate.days <= 0 :
+                            logging.info("The Instance "+ instance.id + " stopped for 24 Days, sending out email...")
                             emailList.append(instance.id)
                         elif ec2instance.state['Name'] == 'running':
                             StoppedInstances.append(instance.id)
@@ -183,33 +183,31 @@ def instanceSegregation(instanceList,email):
 def sendEmail(email,body):
     host = "smtp.clearpath.ai"
     server = smtplib.SMTP(host)
-    server.sendmail("bundles-noreply@clearpath.ai", email, body)
+    server.sendmail("devops@clearpath.ai", email, body)
     server.quit()
 
 
-def sendEmailtemplate(emailId,instanceList):
+def sendEmailtemplate(senderItems):
     senderItems = [i for n, i in enumerate(senderItems)
     if i not in senderItems[n + 1:]]
-  
+
     for email in senderItems:
-       instanceDetails=[]
-       instanceIds=[*set(list(email.values())[0])]
+        instanceDetails=[]
+        instanceIds=[*set(list(email.values())[0])]
 
-       template="""
-       This Email is regarding the instance termination policy
-       The following instances will be terminated as per the policy in 5 Days"""
+        template="""
+        This Email is regarding the instance termination policy
+        The following instances will be terminated as per the policy in 5 Days"""
 
-       for instance in instanceIds:
-         name=[tags['Value'] for ids in ec2resource.instances.all() for tags in ids.tags if tags['Key'] == 'Name' and ids.instance_id == instance]
-         instanceDetails.append(instance + " ==> "+ name[0])
-         #sendEmail(list(email.keys())[0],template+'\n'+'\n'.join(map(str,instanceIds)))
-         sendEmail(list(email.keys())[0],template+'\n'+'\n'.join(map(str,instanceDetails)))
+        for instance in instanceIds:
+            name=[tags['Value'] for ids in ec2resource.instances.all() for tags in ids.tags if tags['Key'] == 'Name' and ids.instance_id == instance]
+            instanceDetails.append(instance + " ==> "+ name[0])
+        sendEmail(list(email.keys())[0],template+'\n'+'\n'.join(map(str,instanceDetails)))
 
 filterProtectedInstances()
 terminateUnusedInstance()
 StoppedInstances=list(set(StoppedInstances))
 TerminateInstances=list(set(TerminateInstances))
-print(emailList)
 emails=[]
 emailTriggerInstanceList=[]
 
@@ -221,7 +219,7 @@ for vmid in emailList:
 
 for email in emails:
     emailTriggerInstanceList.append(instanceSegregation(emailList,email))
-
+sendEmailtemplate(emailTriggerInstanceList)
 if not StoppedInstances:
     logging.info('No Unprotected Instances Found, nothing to terminate')
 else:
