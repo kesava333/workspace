@@ -131,7 +131,7 @@ def terminateUnusedInstance():
                             # print(ec2instance.tags)
                             launchTime = ec2instance.launch_time
                             stoppedDate=date(today.year,today.month,today.day)-date(launchTime.year,launchTime.month,launchTime.day)
-                            if ec2instance.state['Name'] == 'stopped' and stoppedDate.days >= 30 :
+                            if ec2instance.state['Name'] == 'stopped' and stoppedDate.days >= 0 :
                                 logging.info("The Instance "+ instance.id + " stopped for 30+days")
                                 TerminateInstances.append(instance.id)
                             elif ec2instance.state['Name'] == 'stopped' and stoppedDate.days <= 0 :
@@ -145,7 +145,7 @@ def terminateUnusedInstance():
                     if ec2instance.tags is  None or (ec2instance.tags is not None and 'TerminateDate' not in [t['Key'] for t in ec2instance.tags]):
                         launchTime = ec2instance.launch_time
                         stoppedDate=date(today.year,today.month,today.day)-date(launchTime.year,launchTime.month,launchTime.day)
-                        if ec2instance.state['Name'] == 'stopped' and stoppedDate.days >= 30 :
+                        if ec2instance.state['Name'] == 'stopped' and stoppedDate.days >= 0 :
                             logging.info("The Instance "+ instance.id + " stopped for 30+days")
                             TerminateInstances.append(instance.id)
                         elif ec2instance.state['Name'] == 'stopped' and stoppedDate.days <= 0 :
@@ -184,13 +184,22 @@ def sendEmail(email,body):
     host = "smtp.clearpath.ai"
     message = Message(From="devops@clearpath.ai", To=email)
     message.Subject = "AWS SImulation Notification"
-    template = """<p>Hi!<br>
+    template = """<p> <h2>Hi!</h2><br>
        <h2> This Email is regarding the AWS Simulation termination policy</h2> <br>
         The following instances will be terminated as per the policy in 7 Days, 
         please reach out to <b> devops </b> if there any concerns <br>
-        """+'\n'.join(map(str,body))+"""
-        </p> <br>"""
-    print(template)
+         
+<style>
+table, th, td {
+  border:1px solid black;
+}
+</style>
+ <table style="width:100%">
+  <tr>
+    <th>"""+'\r\n'.join(map(str,body))+"""</th>
+  </tr>
+</table> </p> <br>"""
+
     message.Html = template
     sender = Mailer(host)
     sender.send(message)
@@ -224,13 +233,13 @@ for email in emails:
     emailTriggerInstanceList.append(instanceSegregation(emailList,email))
 sendEmailtemplate(emailTriggerInstanceList)
 if not StoppedInstances:
-    logging.info('No Unprotected Instances Found, nothing to terminate')
+    logging.info('No Unprotected Instances Found, nothing to Stop')
 else:
     ec2client.stop_instances(InstanceIds=StoppedInstances)
 
 if TerminateInstances:
+    print("Terminating the VMs because they are idle for 30 Days, Devops already send out the notification prior to 7 Days!")
     #ec2client.terminate_instances(InstanceIds=TerminateInstances)
-    print("Term")
 
 
 reportGeneration(StoppedInstances)
