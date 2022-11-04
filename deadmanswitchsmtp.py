@@ -4,7 +4,7 @@
 # Terminate Instances based on  TerminateDate tag and the Choices are --> Never, Date, Deafult
 # Never - Don't Terminate any instance with this tag value
 # Date - if the date is Older than the tagged date, Terminate those instances
-'''Default - If the instance tag value set to be default, the lambda function will keep monitoring these instances for 30 days 
+'''Default - If the instance tag value set to be default, the lambda function will keep monitoring these instances for 30 days
  & terminate them after 30 days only if the instance is not powered on for 30 days '''
 
 import time
@@ -17,8 +17,10 @@ import logging
 import subprocess
 import sys
 from botocore.exceptions import ClientError
-from mailer import Mailer
-from mailer import Message
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from simple_colors import *
 
 subprocess.call('pip install tabulate -t /tmp/ --no-cache-dir'.split(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 sys.path.insert(1, '/tmp/')
@@ -34,7 +36,7 @@ today = datetime.today()
 ec2resource = boto3.resource('ec2',region_name=region)
 ec2client = boto3.client('ec2', region_name=region)
 
-# Set the logging level 
+# Set the logging level
 logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -52,7 +54,7 @@ instances = ec2resource.instances.filter(Filters=filters)
 # Column names for the report
 col_names = ["Instance Name", "Instance ID", "Timestamp" ,
 "Instance status", "Instance Powered off due to lambda", "Instance terminated due to lambda" ]
-    
+
 # instantiate an empty array to house the running instances
 RunningInstances = []
 StoppedInstances = []
@@ -95,11 +97,11 @@ def reportGeneration(instanceList):
         # Get the instance status
         instance = ec2resource.Instance(instanceId)
         instanceReportAttribute.insert(3,instance.state['Name'])
-    
+
         if (instance.state['Name'] == 'stopped' or instance.state['Name'] == 'stopping')  and attributePassed == "StoppedInstances":
             instanceReportAttribute.insert(4,"Yes")
         else:
-            instanceReportAttribute.insert(4,"No")       
+            instanceReportAttribute.insert(4,"No")
         if (instance.state['Name'] == 'Terminated' or instance.state['Name'] == 'shutting-down') and attributePassed == "TerminateInstances":
             instanceReportAttribute.insert(5,"Yes")
         else:
@@ -131,7 +133,7 @@ def terminateUnusedInstance():
                             # print(ec2instance.tags)
                             launchTime = ec2instance.launch_time
                             stoppedDate=date(today.year,today.month,today.day)-date(launchTime.year,launchTime.month,launchTime.day)
-                            if ec2instance.state['Name'] == 'stopped' and stoppedDate.days >= 0 :
+                            if ec2instance.state['Name'] == 'stopped' and stoppedDate.days >= 30 :
                                 logging.info("The Instance "+ instance.id + " stopped for 30+days")
                                 TerminateInstances.append(instance.id)
                             elif ec2instance.state['Name'] == 'stopped' and stoppedDate.days <= 0 :
@@ -145,10 +147,10 @@ def terminateUnusedInstance():
                     if ec2instance.tags is  None or (ec2instance.tags is not None and 'TerminateDate' not in [t['Key'] for t in ec2instance.tags]):
                         launchTime = ec2instance.launch_time
                         stoppedDate=date(today.year,today.month,today.day)-date(launchTime.year,launchTime.month,launchTime.day)
-                        if ec2instance.state['Name'] == 'stopped' and stoppedDate.days >= 0 :
+                        if ec2instance.state['Name'] == 'stopped' and stoppedDate.days >= 30 :
                             logging.info("The Instance "+ instance.id + " stopped for 30+days")
                             TerminateInstances.append(instance.id)
-                        elif ec2instance.state['Name'] == 'stopped' and stoppedDate.days <= 0 :
+                        elif ec2instance.state['Name'] == 'stopped' and stoppedDate.days <= 0:
                             logging.info("The Instance "+ instance.id + " stopped for 24 Days, sending out email...")
                             emailList.append(instance.id)
                         elif ec2instance.state['Name'] == 'running':
@@ -156,11 +158,11 @@ def terminateUnusedInstance():
                             logging.info(instance.id + " will be powered off, Because the instance has no tag associated and scheduled to stop")
                         elif ec2instance.state['Name'] == 'stopped' :
                             protectedInstances.append(instance.id)
-                                
-                        ''' 
+
+                        '''
                         else:
                             logging.info("Tag Not matched")
-                        
+
                         if  tags["Key"] == 'TerminateDate' and tags["Value"] == "Yes":
                             RunningInstances.append(instance.id)
                             logging.info(instance.id + " will be powered off, Because the terminate status is set to Yes")
@@ -170,7 +172,7 @@ def terminateUnusedInstance():
                             logging.info(instance.id + " will be stopped")
                         '''
                     # Stop the instances when no tag is attached to the instance
-                    
+
 def instanceSegregation(instanceList,email):
     emailDict={email:[]}
     for vmid in emailList:
@@ -182,27 +184,11 @@ def instanceSegregation(instanceList,email):
 
 def sendEmail(email,body):
     host = "smtp.clearpath.ai"
-    message = Message(From="devops@clearpath.ai", To=email)
-    message.Subject = "AWS SImulation Notification"
-    template = """<p> <h2>Hi!</h2><br>
-       <h2> This Email is regarding the AWS Simulation termination policy</h2> <br>
-        The following instances will be terminated as per the policy in 7 Days, 
-        please reach out to <b> devops </b> if there any concerns <br>
-         
-<style>
-table, th, td {
-  border:1px solid black;
-}
-</style>
- <table style="width:100%">
-  <tr>
-    <th>"""+'\r\n'.join(map(str,body))+"""</th>
-  </tr>
-</table> </p> <br>"""
-
-    message.Html = template
-    sender = Mailer(host)
-    sender.send(message)
+    template ="Hello,"+'\n\n'+"You are receiving this email as the owner of an AWS simulation environment that has been left turned off for an extended continuous period of time. As part of the AWS Simulation termination policy, the following instances will be permanently deleted in 7 Days. "+"\n\n" +'\n'.join(map(str,body)) +"\n" +"Please reach out to devops team if there any concerns"
+    message = 'Subject: {}\n\n{}'.format('Simulation VMs Sunset Policy Notification',template )
+    server = smtplib.SMTP(host,25)
+    # text = template
+    server.sendmail("devops@clearpath.ai", email, message)
 
 def sendEmailtemplate(senderItems):
     senderItems = [i for n, i in enumerate(senderItems)
@@ -213,7 +199,8 @@ def sendEmailtemplate(senderItems):
         instanceIds=[*set(list(email.values())[0])]
         for instance in instanceIds:
             name=[tags['Value'] for ids in ec2resource.instances.all() for tags in ids.tags if tags['Key'] == 'Name' and ids.instance_id == instance]
-            instanceDetails.append(instance + " ==> "+ name[0])
+            instanceDetails.append(name[0] + " ==> "+ instance)
+        print(instanceDetails)
         sendEmail(list(email.keys())[0], instanceDetails)
 
 filterProtectedInstances()
@@ -233,13 +220,14 @@ for email in emails:
     emailTriggerInstanceList.append(instanceSegregation(emailList,email))
 sendEmailtemplate(emailTriggerInstanceList)
 if not StoppedInstances:
-    logging.info('No Unprotected Instances Found, nothing to Stop')
+    logging.info('No Unprotected Instances Found, nothing to stop')
 else:
     ec2client.stop_instances(InstanceIds=StoppedInstances)
 
 if TerminateInstances:
     print("Terminating the VMs because they are idle for 30 Days, Devops already send out the notification prior to 7 Days!")
     #ec2client.terminate_instances(InstanceIds=TerminateInstances)
+    print("dummy Terminating ")
 
 
 reportGeneration(StoppedInstances)
