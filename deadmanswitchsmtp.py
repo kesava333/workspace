@@ -8,7 +8,7 @@
  & terminate them after 30 days only if the instance is not powered on for 30 days '''
 
 '''
-TerminateDte == Never
+TerminateDate == Never
 	    Protected -> Dont touch
 TerminateDate == Default
      stopped date Older then/equal 30 -> terminate the instance
