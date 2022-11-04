@@ -7,6 +7,17 @@
 '''Default - If the instance tag value set to be default, the lambda function will keep monitoring these instances for 30 days
  & terminate them after 30 days only if the instance is not powered on for 30 days '''
 
+'''
+TerminateDte == Never
+	    Protected -> Dont touch
+TerminateDate == Default
+     stopped date Older then/equal 30 -> terminate the instance
+     stopped date equal to 24 => Trigger the warning email
+     instance is running -> Stop it
+     No tags -> Stop it
+
+'''
+
 import time
 import boto3
 from datetime import date
