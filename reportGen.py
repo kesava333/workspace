@@ -7,7 +7,7 @@ import random
 from datetime import datetime, timedelta
 import os
 
-region_name='ap-south-1'
+region_name='us-east-2'
 
 def lambda_handler(event, context):
     
