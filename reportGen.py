@@ -36,23 +36,23 @@ def lambda_handler(event, context):
                 Namespace = 'InstanceStatusReport')
        
         if state == 'running' or 'pending':
-            publishing_metrics(1)
+           # publishing_metrics(1)
             print("Instance is Running, Status Updated to cloudwatch")
         elif state == 'stopping' or 'stopped':
-            publishing_metrics(0)
+            #publishing_metrics(0)
             print("Instance is Stopped, Status Updated to cloudwatch")
         
         response = cloudwatch.get_metric_statistics(
                 Namespace = 'InstanceStatusReport',
-                Period = 3000,
-                StartTime = datetime.utcnow() - timedelta(seconds = 600),
+                Period = 300000,
+                StartTime = datetime.utcnow() - timedelta(seconds = 90000),
                 EndTime = datetime.utcnow(),
                 MetricName = 'InstanceStatus',
                  Statistics=[
-                "SampleCount",
+                "Sum",
             ],
                 Dimensions = [
                     {'Name': str(id), 'Value': str(state)}
                 ])
         for r in response['Datapoints']:
-            print(r['SampleCount'])
+            print(r['Sum'])
