@@ -71,3 +71,4 @@ def lambda_handler(event, context):
             
             for data in fin_report:
                writer.writerow(data)
+        s3client.upload_file('/tmp/'+str(stamp)+"."+'csv', bucketName, str(stamp)+"."+'csv')
