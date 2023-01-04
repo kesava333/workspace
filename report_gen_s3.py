@@ -8,10 +8,10 @@ from datetime import datetime, timedelta
 import os
 import csv
 
-bucketregion_name='ap-south-1'
+bucketregion_name='us-east-2'
 # Mention the days to fetch the report in Days from Today
 reportPeriod=5
-bucketName="report-instancemani"
+bucketName="ec2-cost-monitoring-s3"
 
 def lambda_handler(event, context):
     
@@ -38,6 +38,7 @@ def lambda_handler(event, context):
                     Dimensions = [
                         {'Name': str(iId), 'Value': str(iStatus)}
                     ])
+            
             for r in response['Datapoints']:
                 return(iId,region_name['RegionName'],statusToCheck,r['Sum'])
     
@@ -59,7 +60,8 @@ def lambda_handler(event, context):
         temp_csv_file = csv.writer(open("/tmp/csv_file.csv", "w+"))
         temp_csv_file.writerow(["Account Name", "Month", "Cost"])
         
-        
+        #print("check  ########")
+        #print(report)
         fin_report=[list(dimension) for dimension in list(report)]
         stamp="instanceSummaryReport-"+str(time.year)+"-"+str(time.month)+"-"+str(time.day)+"-"+str(time.hour)+":"+str(time.minute)
         
