@@ -1,0 +1,45 @@
+def scriptFile="scripts/report.py"
+pipeline {
+    agent {
+            kubernetes {
+            yamlFile 'templates/pod.yaml'
+            defaultContainer 'shell'
+        }
+    }
+
+    stages {
+        stage('SCM Pull') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: '11122232443213', url: 'https://gitlab.clearpathrobotics.com']]])
+            }
+        }
+        stage('Pushing reports to S3') {
+            steps {
+                script{
+                    withCredentials([[
+                                    $class: 'AmazonWebServicesCredentialsBinding',
+                                    credentialsId: "LambdaExecution",
+                                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                                ]]) {
+                                    sh("rm -rf /tmp/scripts && mkdir /tmp/scripts && cp '${scriptFile}' /tmp/scripts")
+                                    sh("pip3 install boto3")
+                                    sh("""python3 /tmp/'${scriptFile}' """)
+                                    
+                                }
+                            }
+                        }
+                    }
+        stage('Removing the Pipeline Residues'){
+            steps{
+                script{
+                    sh("rm -rf /tmp/scripts/*")
+
+                }
+            }
+        }
+    }
+}
+
+ 
+
