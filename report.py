@@ -20,9 +20,8 @@ ec2res = boto3.resource('ec2',region_name="us-east-2")
 def get_tag(id):
     for instance in ec2res.instances.all():
         if instance.id == id:
-            for tag in instance.tags:
-                if tag['Key'] == 'Name':
-                    return tag['Value']
+            hName = [ tag['Value'] for tag in instance.tags if tag['Key'] == 'Name' ]
+            return hName
 
 time=datetime.now()
 s3client = boto3.client('s3',region_name=bucketregion_name)
