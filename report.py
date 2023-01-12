@@ -23,8 +23,6 @@ def get_tag(id):
             for tag in instance.tags:
                 if tag['Key'] == 'Name':
                     return tag['Value']
-                else:
-                    return None
 
 time=datetime.now()
 s3client = boto3.client('s3',region_name=bucketregion_name)
@@ -47,11 +45,11 @@ def get_response(iId, iStatus):
                 "Sum",
             ],
                 Dimensions = [
-                    {'Name': str(iId), 'Value': str(iStatus)}
+                    {'Name': str(iId), 'Value': str(statusToCheck)}
                 ])
         
         for r in response['Datapoints']:
-            return(get_tag(iId),iId,regionToFilter,statusToCheck,r['Sum'])
+            return(get_tag(iId),iId,regionToFilter,str(iStatus),r['Sum'])
 
 
             
