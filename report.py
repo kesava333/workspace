@@ -53,7 +53,7 @@ def get_response(iId, iStatus):
 
 
             
-client = boto3.client('ec2')
+client = boto3.client('ec2', region_name=regionToFilter)
 
     
 ec2 = boto3.resource('ec2',region_name=regionToFilter)
