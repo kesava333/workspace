@@ -64,7 +64,7 @@ for instance in ec2.instances.all():
 
 temp_csv_file = csv.writer(open("/tmp/csv_file.csv", "w+"))
 
-fin_report=[list(dimension) for dimension in list(report)]
+fin_report=[list(dimension) for dimension in list(report) if dimension is not None]
 stamp="instanceSummaryReport-"+str(time.year)+"-"+str(time.month)+"-"+str(time.day)+"-"+str(time.hour)+":"+str(time.minute)
 
 
