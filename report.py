@@ -21,12 +21,12 @@ def get_tag(id):
     for instance in ec2res.instances.all():
         if instance.id == id:
             hName = [ tag['Value'] for tag in instance.tags if tag['Key'] == 'Name' ]
-            return hName
+            return hName[0]
 
 time=datetime.now()
 s3client = boto3.client('s3',region_name=bucketregion_name)
 
-header = ['Name','InstanceID', 'Region', 'Status', 'Hours']
+header = ['Name','InstanceID', 'Region', 'CurrentStatus', 'Hours']
 
 statusToCheck='running'
 
