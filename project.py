@@ -30,6 +30,19 @@ def lambda_handler(event, context):
                  'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
             ])
         print('Ingress Successfully Set %s' % data)
+        ec2.create_tags(
+        Resources=[security_group_id],
+        Tags=[
+            {
+                'Key': 'Name',
+                'Value': 'My Security Group'
+            },
+            {
+                'Key': 'Environment',
+                'Value': 'Production'
+            }
+        ]
+    )
     except ClientError as e:
         print(e)
 ----
