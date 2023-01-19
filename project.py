@@ -46,15 +46,11 @@ def lambda_handler(event, context):
     except ClientError as e:
         print(e)
 ----
-
-
-
-
 import json
 import boto3
 
 
-prefix_list_cidr_blocks = ['10.0.0.0/24', '192.168.1.0/24', '172.16.0.0/16']
+
 security_group_name="test1"
 security_group_description="test1"
 ingress_sg=[
@@ -62,11 +58,23 @@ ingress_sg=[
         {'IpProtocol': 'tcp', 'FromPort': 80, 'ToPort': 80, 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
     ]
 prefix_list_name="demo1"
-vpc_id=""
+prefixListEntry=[
+        {
+            'Cidr': '192.0.2.0/24',
+            'Description': 'Test entry 1'
+        },
+        {
+            'Cidr': '198.51.100.0/24',
+            'Description': 'Test entry 2'
+        }
+    ]
+    
+vpc_id="vpcid"
 
 def lambda_handler(event, context):
     # TODO implement
     # Create a client for the EC2 service
+
     ec2 = boto3.client('ec2')
     try:
         # Create a security group
@@ -79,10 +87,24 @@ def lambda_handler(event, context):
         # Get the security group ID
         security_group_id = response['GroupId']
 
-        # Authorize inbound traffic for SSH and HTTP
+
         ec2.authorize_security_group_ingress(
             GroupId=security_group_id,
             IpPermissions=ingress_sg
         )
      except ClientError as e:
         print(e)
+
+    
+    prefix_list_entries = prefixListEntry
+    
+
+    prefixList = ec2.create_managed_prefix_list(
+    DryRun=False,
+    PrefixListName=prefix_list_name,
+    Entries=prefix_list_entries,
+    MaxEntries=100,
+    AddressFamily='IPv4'
+    )
+    
+    prefixListID=prefixList['PrefixList']['PrefixListId']
