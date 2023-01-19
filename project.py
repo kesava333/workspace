@@ -2,12 +2,13 @@ import json
 import boto3
 import sys
 from botocore.exceptions import ClientError
+
 #SgName = sys.argv[1]
 Project_Name = sys.argv[1]
 #PlName = sys.argv[2]
 Plentries = sys.argv[2]
-ec2 = boto3.client('ec2',region_name = 'us-east-2')
 
+ec2 = boto3.client('ec2',region_name = 'us-east-2')
 response = ec2.describe_vpcs()
 vpc_id = response.get('Vpcs', [{}])[1].get('VpcId', '')
 
@@ -29,14 +30,14 @@ try:
     MaxEntries=5,
     AddressFamily='IPv4'
     )
-    
+
     prefixListID=prefixList['PrefixList']['PrefixListId']
     print("Prefix List ID:" +prefixListID)
-    
+
     response = ec2.create_security_group(GroupName=Project_Name+'-sg',
                                             Description=Project_Name+'-sg',
                                             VpcId=vpc_id)
-                                    
+
     security_group_id = response['GroupId']
     print('Security Group Created %s in vpc %s.' % (security_group_id, vpc_id))
 
@@ -67,11 +68,10 @@ try:
         ]
     )
 
-   instance_name_tag = Project_Name
-   instances = ec2.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': [instance_name_tag]}])
-   instance_ids = [instance['InstanceId'] for reservation in instances['Reservations'] for instance in reservation['Instances']]
-   for instance_id in instance_ids:
-    ec2.modify_instance_attribute(InstanceId=instance_id, Groups=[security_group_id])
-   
+    instance_name_tag = Project_Name
+    instances = ec2.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': [instance_name_tag]}])
+    instance_ids = [instance['InstanceId'] for reservation in instances['Reservations'] for instance in reservation['Instances']]
+    for instance_id in instance_ids:
+        ec2.modify_instance_attribute(InstanceId=instance_id, Groups=[security_group_id])   
 except ClientError as e:
     print(e)
