@@ -111,10 +111,10 @@ def lambda_handler(event, context):
     
     
     -----------------------------
-    instance_name_tag = 'my-instance'
-    instances = ec2.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': [instance_name_tag]}])
-    instance_id = response['Reservations'][0]['Instances'][0]['InstanceId']
-    response = ec2.modify_instance_attribute(
+    instance_name_tag = Project_Name
+   instances = ec2.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': [instance_name_tag]}])
+   instance_id = response['Reservations'][0]['Instances'][0]['InstanceId']
+   response = ec2.modify_instance_attribute(
                 InstanceId=instance_id,
                 Groups=[security_group_id]
             )
