@@ -69,16 +69,17 @@ def lambda_handler(event, context):
         instance_ids = [instance['InstanceId'] for reservation in instances['Reservations'] for instance in reservation['Instances']]
         
         for instance_id in instance_ids:
+            sg_instancelist = ec2.describe_instances(InstanceIds=[instance_id])
+            security_group_ids = [sg_instancelist['Reservations'][0]['Instances'][0]['SecurityGroups'][0]['GroupId']]
+            security_group_ids.append(security_group_id)
+            sg_list = security_group_ids
             nic = ec2.describe_network_interfaces(Filters=[{'Name': 'attachment.instance-id', 'Values': [instance_id]}])
             network_interfaces = nic['NetworkInterfaces']
-            sg_instancelist = ec2.describe_instances(InstanceIds=[instance_id])
-            security_group_ids = sg_instancelist['Reservations'][0]['Instances'][0]['SecurityGroups']
-            sg_list=security_group_ids.append(security_group_id)
         
             # Get the network interface ID
             if network_interfaces:
                 network_interface_id = network_interfaces[0]['NetworkInterfaceId']
-                response = ec2.associate_network_interface(
+                response = ec2.modify_network_interface_attribute(
                 NetworkInterfaceId=network_interface_id,
                 Groups=sg_list
                 )
