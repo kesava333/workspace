@@ -65,8 +65,9 @@ def lambda_handler(event, context):
             ]
         )
         
-        instances = ec2.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': [Project_Name]}])
-        instance_ids = [instance['InstanceId'] for reservation in instances['Reservations'] for instance in reservation['Instances']]
+
+        instances = ec2.describe_instances()
+        instance_ids = [instance['InstanceId'] for reservation in instances['Reservations'] for instance in reservation['Instances'] if 'Tags' in instance for tag in instance['Tags'] if tag['Key'] == 'Name' and Project_Name in tag['Value']]
         
         for instance_id in instance_ids:
             sg_instancelist = ec2.describe_instances(InstanceIds=[instance_id])
