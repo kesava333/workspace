@@ -8,3 +8,20 @@ if (($size < 30000000)); then
 fi
 
 ### Delete old deb's ---- we are keeping lated debs i.e. 3 days debs
+
+
+
+
+#!/bin/bash
+
+path=("/home/ec2-user/dynatrace"
+        "/home/ec2-user/devops_main"
+        "/home/ec2-user/build")
+daysCount=1
+
+for files in ${path[@]}; do
+        echo "Searching in $files"
+        echo "These are the files that are older than $daysCount days in $files"
+        find $files -type f -mtime +$daysCount -exec rm -f {} \;
+        echo "-------------------------------"
+done
