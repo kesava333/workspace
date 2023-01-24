@@ -266,7 +266,7 @@ def lambda_handler(event, context):
             sg.append(security_group_id)
             nic = ec2.describe_network_interfaces(Filters=[{'Name': 'attachment.instance-id', 'Values': [instance_id]}])
             network_interfaces = nic['NetworkInterfaces']
-        
+            
             # Get the network interface ID
             if network_interfaces:
                 network_interface_id = network_interfaces[0]['NetworkInterfaceId']
@@ -279,4 +279,11 @@ def lambda_handler(event, context):
     except Exception as e:
         print(e)
     
+-----------------
 
+entries = [{'Cidr': Plentries}]
+prefixList = ec2.describe_managed_prefix_lists(PrefixListIds=[prefix_list_id])
+version = [pl['Version'] for pl in prefixList['PrefixLists']]
+
+# Add the entries to the prefix list
+ec2.modify_managed_prefix_list(PrefixListId=prefix_list_id, AddEntries=entries, CurrentVersion=version[0])
