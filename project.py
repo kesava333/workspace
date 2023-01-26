@@ -279,7 +279,7 @@ def lambda_handler(event, context):
     except Exception as e:
         print(e)
     
------------------
+-----------------------------------------------------------------------------------------------------------------------
 
 entries = [{'Cidr': Plentries}]
 prefixList = ec2.describe_managed_prefix_lists(PrefixListIds=[prefix_list_id])
@@ -287,3 +287,52 @@ version = [pl['Version'] for pl in prefixList['PrefixLists']]
 
 # Add the entries to the prefix list
 ec2.modify_managed_prefix_list(PrefixListId=prefix_list_id, AddEntries=entries, CurrentVersion=version[0])
+
+
+
+-----------------------------------------------------------------------------------------------------------------------
+
+
+eip = false
+
+
+if len(sys.argv) > 5:
+    eip = sys.argv[6]
+
+
+
+def allocate_eip(instanceIDs):
+    for instance in instanceIDs:
+        instanceResponse = ec2.describe_instances(InstanceIds=[instance])
+        name_tag = None
+        for tag in instanceResponse['Reservations'][0]['Instances'][0]['Tags']:
+            if tag['Key'] == 'Name':
+                name_tag = tag['Value']
+                break
+        print(name_tag)
+        response = ec2.allocate_address()
+        
+        # Extract the Elastic IP address
+        elastic_ip = response['PublicIp']
+        eipID=response['AllocationId']
+        print(f'Allocated Elastic IP: {elastic_ip}')
+        
+        response = ec2.associate_address(
+        InstanceId=instance,
+        PublicIp=elastic_ip,
+        )
+        print(f'Associated Elastic IP: {elastic_ip} to Instance : {name_tag}')
+        ec2.create_tags(
+        Resources=[eipID],
+        Tags=[
+            {
+                'Key': 'Name',
+                'Value': name_tag
+            },
+        ]
+    )
+
+
+allocate_eip(instance_ids)
+
+
