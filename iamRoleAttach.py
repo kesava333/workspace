@@ -5,21 +5,24 @@ client = boto3.client("ec2")
 RoleARN="arn:aws:iam::aid:role/s3FullAccessEC2"
 
 
+
+
 def lambda_handler(event, context):
+    instanceId=event['details']['instance-id']
     try:
-        iam_policy = get_instance_iam_policy(event['instance-id'])
+        iam_policy = get_instance_iam_policy(instanceId)
         print(iam_policy['Arn'])
         if iam_policy is None or iam_policy['Arn'] != iam_policy['Arn']:
             response = client.associate_iam_instance_profile(
                 IamInstanceProfile={
                     'Arn': RoleARN,
                 },
-                InstanceId=event['instance-id']
+                InstanceId=instanceId
                 )
-            print(f"Successfully attached the IAM policy {RoleARN} with the instance {event['instance-id']}")
+            print(f"Successfully attached the IAM policy {RoleARN} with the instance {instanceId}")
         else:
-            detach_instance_iam_policy(event['instance-id'])
-            attachIAMRole(event['instance-id'])
+            detach_instance_iam_policy(instanceId)
+            attachIAMRole(instanceId)
     except Exception as e:
         raise e
     
