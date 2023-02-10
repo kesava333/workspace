@@ -3,16 +3,16 @@ import boto3
 
 client = boto3.client("ec2")
 RoleARN="arn:aws:iam::aid:role/s3FullAccessEC2"
-
-
+Role=""
 
 
 def lambda_handler(event, context):
-    instanceId=event['details']['instance-id']
+    instanceId=event['detail']
+    instanceId= instanceId['instance-id']
+    time.sleep(10)
     try:
         iam_policy = get_instance_iam_policy(instanceId)
-        print(iam_policy['Arn'])
-        if iam_policy is None or iam_policy['Arn'] != iam_policy['Arn']:
+        if iam_policy is None or iam_policy['Arn'] != Role:
             response = client.associate_iam_instance_profile(
                 IamInstanceProfile={
                     'Arn': RoleARN,
