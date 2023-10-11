@@ -24,11 +24,11 @@ sudo docker run hello-world
 
 # Install Kubernetes Now
 # Add Kubernetes Signing Key
-curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo tee /usr/share/keyrings/kubernetes.gpg
-#Add Software Repositories
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/kubernetes.gpg] http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list
-# Kubernetes Installation Tools
-sudo apt install kubeadm kubelet kubectl
+sudo apt update && sudo apt install -y apt-transport-https
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo apt update
+sudo apt install -y kubeadm kubelet kubectl
 #
 sudo apt-mark hold kubeadm kubelet kubectl
 kubeadm version
